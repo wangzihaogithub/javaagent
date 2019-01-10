@@ -35,9 +35,8 @@ public class LogTransformerByInsertCode implements ClassFileTransformer {
         }
 
         ClassPool classPool = ClassPool.getDefault();
-        CtClass ctclass = null;
         try {
-            ctclass = classPool.getCached(fullClassName);
+            CtClass ctclass = classPool.getCached(fullClassName);
             if(ctclass == null){
                 ctclass = classPool.makeClass(new ByteArrayInputStream(classfileBuffer),false);// 使用全称,用于取得字节码类<使用javassist>
             }
