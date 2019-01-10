@@ -16,17 +16,13 @@ public class LogTransformerByNewMethod implements ClassFileTransformer {
     /**
      * 被处理的包路径
      */
-    private final List<String> packagePaths = new LinkedList<>();
+    private final List<String> packagePaths;
     private String proxyEndsWith = "$raw";
     private long timeout;
 
-    public LogTransformerByNewMethod() {
-        super();
-        String packages = System.getProperty("rt.agent.packages");
-        if(packages != null && packages.length() > 0){
-            this.packagePaths.addAll(Arrays.asList(packages.split(",")));
-        }
-        this.timeout = Long.parseLong(System.getProperty("rt.agent.timeout","1000"));
+    public LogTransformerByNewMethod(String[] packagePaths,long timeout) {
+        this.packagePaths = new LinkedList<>(Arrays.asList(packagePaths));
+        this.timeout = timeout;
     }
 
     @Override
