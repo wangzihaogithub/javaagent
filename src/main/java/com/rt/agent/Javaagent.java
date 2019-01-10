@@ -1,6 +1,6 @@
-package com.runtime.bytecode;
+package com.rt.agent;
 
-import javassist.LogTransformer;
+import javassist.LogTransformerByInsertCode;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.AnalyzerAdapter;
 import org.objectweb.asm.commons.LocalVariablesSorter;
@@ -11,7 +11,7 @@ public class Javaagent {
 
     public static void premain(String agentArgs, Instrumentation instrumentation){
         System.out.println("begin agentArgs="+agentArgs+", instrumentation="+instrumentation);
-        LogTransformer transformer = new LogTransformer();
+        LogTransformerByInsertCode transformer = new LogTransformerByInsertCode();
         instrumentation.addTransformer(transformer);
         System.out.println("end agentArgs="+agentArgs+", instrumentation="+instrumentation);
     }

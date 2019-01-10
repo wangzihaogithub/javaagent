@@ -12,7 +12,7 @@ import java.util.StringJoiner;
 /**
  * @author 84215
  */
-public class LogTransformer implements ClassFileTransformer {
+public class LogTransformerByNewMethod implements ClassFileTransformer {
     /**
      * 被处理的包路径
      */
@@ -20,13 +20,13 @@ public class LogTransformer implements ClassFileTransformer {
     private String proxyEndsWith = "$raw";
     private long timeout;
 
-    public LogTransformer() {
+    public LogTransformerByNewMethod() {
         super();
-        String packages = System.getProperty("kf.agent.packages");
+        String packages = System.getProperty("rt.agent.packages");
         if(packages != null && packages.length() > 0){
             this.packagePaths.addAll(Arrays.asList(packages.split(",")));
         }
-        this.timeout = Long.parseLong(System.getProperty("kf.agent.timeout","1000"));
+        this.timeout = Long.parseLong(System.getProperty("rt.agent.timeout","1000"));
     }
 
     @Override
@@ -42,6 +42,7 @@ public class LogTransformer implements ClassFileTransformer {
             if(ctclass == null){
                 ctclass = ClassPool.getDefault().makeClass(new ByteArrayInputStream(classfileBuffer),false);// 使用全称,用于取得字节码类<使用javassist>
             }
+
             for (CtMethod oldMethod : ctclass.getDeclaredMethods()) {
                 boolean isProxyMethod = isNeedProxyMethod(oldMethod);
                 if(!isProxyMethod){
@@ -50,7 +51,7 @@ public class LogTransformer implements ClassFileTransformer {
 
                 String methodName = oldMethod.getName();
                 String newMethodName = methodName + proxyEndsWith;// 新定义一个方法叫做比如sayHello$old
-                oldMethod.setName(newMethodName);// 将原来的方法名字修改
+
 
                 // 创建新的方法，复制原来的方法，名字为原来的名字
                 CtMethod newMethod = CtNewMethod.copy(oldMethod, methodName, ctclass, null);
@@ -66,7 +67,8 @@ public class LogTransformer implements ClassFileTransformer {
                 String finallyMethod = "";
                 if(!"main".equals(methodName)){
                     finallyMethod =
-                        "long time = System.currentTimeMillis() - startTime;"+
+                        "long time = System.currentTimeMillis() - startTime;" +
+                        "System.out.println(\"cost is \"+time+\"\");"+
                         "if(time > "+timeout+"){"+
                             "throw new RuntimeException(\"" + methodName + "("+parameterStr+") execute cost:\" +(time) +\"ms.\");"+
                         "}";
@@ -84,6 +86,7 @@ public class LogTransformer implements ClassFileTransformer {
                     "}"+
                 "}";
 
+                oldMethod.setName(newMethodName);// 将原来的方法名字修改
                 newMethod.setBody(bodyStr);// 替换新方法
                 ctclass.addMethod(newMethod);// 增加新方法
             }
@@ -102,6 +105,9 @@ public class LogTransformer implements ClassFileTransformer {
 
     private boolean isNeedProxyClass(String className){
         if(packagePaths.isEmpty()){
+            return false;
+        }
+        if(className.contains("$$")){
             return false;
         }
 

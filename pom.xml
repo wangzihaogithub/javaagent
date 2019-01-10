@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.runtime.bytecode</groupId>
+    <groupId>com.rt.agent</groupId>
     <artifactId>javaagent</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
 
     <dependencies>
         <dependency>
@@ -43,9 +43,8 @@
                             <addClasspath>true</addClasspath>
                         </manifest>
                         <manifestEntries>
-                            <Premain-Class>com.runtime.bytecode.Javaagent</Premain-Class>
+                            <Premain-Class>com.rt.agent.Javaagent</Premain-Class>
                         </manifestEntries>
-
                     </archive>
                 </configuration>
             </plugin>
