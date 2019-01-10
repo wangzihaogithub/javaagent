@@ -7,6 +7,10 @@ import org.objectweb.asm.commons.LocalVariablesSorter;
 
 import java.lang.instrument.Instrumentation;
 
+/**
+ * jvm启动参数 -javaagent:D:\wangzihao\workspace\kf-imes-new\plug\javaagent-1.0.jar -Drt.agent.packages=com.kf.imes.controller
+ * @author 84215
+ */
 public class Javaagent {
 
     public static void premain(String agentArgs, Instrumentation instrumentation){
