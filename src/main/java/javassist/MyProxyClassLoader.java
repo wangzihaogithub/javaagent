@@ -1,9 +1,7 @@
 package javassist;
 
 import java.io.ByteArrayInputStream;
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
-import java.security.ProtectionDomain;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,7 +9,7 @@ import java.util.List;
 /**
  * @author 84215
  */
-public class LogTransformerByInsertCode implements ClassFileTransformer {
+public class MyProxyClassLoader extends Loader {
     /**
      * 被处理的包路径
      */
@@ -19,25 +17,61 @@ public class LogTransformerByInsertCode implements ClassFileTransformer {
     private long timeout;
     private ClassPool classPool;
 
-    public LogTransformerByInsertCode(String[] packagePaths,long timeout,ClassPool classPool) {
+    public MyProxyClassLoader(String[] packagePaths, long timeout, ClassPool classPool) {
         this.packagePaths = new LinkedList<>(Arrays.asList(packagePaths));
         this.timeout = timeout;
         this.classPool = classPool;
     }
 
     @Override
-    public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
-        String fullClassName = className.replace("/", ".");
+    protected Class findClass(String name) throws ClassNotFoundException {
+        byte[] classfile;
+        try {
+            String jarname =  "/" + name.replace('.', '/') + ".class";
+            InputStream in = getClass().getResourceAsStream(jarname);
+            if (in == null) {
+                return null;
+            }
+            byte[] oldClassfile = ClassPoolTail.readStream(in);
+            byte[] newClassfile = getByteCode(oldClassfile,name);
+            if(newClassfile == null){
+                classfile = oldClassfile;
+            }else {
+                classfile = newClassfile;
+            }
+        }
+        catch (Exception e) {
+            throw new ClassNotFoundException("caught an exception while obtaining a class file for "+ name, e);
+        }
+
+        int i = name.lastIndexOf('.');
+        if (i != -1) {
+            String pname = name.substring(0, i);
+            if (getPackage(pname) == null) {
+                try {
+                    definePackage(
+                            pname, null, null, null, null, null, null, null);
+                }
+                catch (IllegalArgumentException e) {
+                    // ignore.  maybe the package object for the same
+                    // name has been created just right away.
+                }
+            }
+        }
+        return defineClass(name, classfile, 0, classfile.length);
+    }
+
+    public byte[] getByteCode(byte[] bytes, String fullClassName) {
         if(!isNeedProxyClass(fullClassName)){
             return null;
         }
-
         try {
             CtClass ctclass = classPool.getCached(fullClassName);
             if(ctclass == null){
-                ctclass = classPool.makeClass(new ByteArrayInputStream(classfileBuffer),false);// 使用全称,用于取得字节码类<使用javassist>
+                ctclass = classPool.makeClass(new ByteArrayInputStream(bytes), false);// 使用全称,用于取得字节码类<使用javassist>
             }
             if(ctclass.isInterface()){
+                ctclass.detach();
                 return null;
             }
 
@@ -48,20 +82,16 @@ public class LogTransformerByInsertCode implements ClassFileTransformer {
                 }
 
                 String fullMethodName = ctMethod.getMethodInfo2().toString();
-
-
                 ctMethod.addLocalVariable("startTime",CtClass.longType);
                 ctMethod.insertBefore("startTime = System.currentTimeMillis();" );
                 ctMethod.insertAfter("long time = System.currentTimeMillis() - startTime;" +
                         "System.out.println(\"------------------\"+Thread.currentThread()+\"  "+fullMethodName+" runtime cost is \"+time+\"\");"+
                         "if(time > "+timeout+"){"+
-                            "throw new RuntimeException(\"" + fullMethodName+") execute cost:\" +(time) +\"ms.\");"+
+                        "throw new RuntimeException(\"" + fullMethodName+") execute cost:\" +(time) +\"ms.\");"+
                         "}");
                 System.out.println("代理方法 - " + fullMethodName);
             }
-            byte[] bytes = ctclass.toBytecode();
-            ctclass.detach();
-            return bytes;
+            return ctclass.toBytecode();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -101,4 +131,3 @@ public class LogTransformerByInsertCode implements ClassFileTransformer {
         return true;
     }
 }
-

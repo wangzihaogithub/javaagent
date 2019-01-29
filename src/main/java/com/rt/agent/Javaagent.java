@@ -1,5 +1,6 @@
 package com.rt.agent;
 
+import javassist.ClassPool;
 import javassist.LogTransformerByInsertCode;
 
 import java.lang.instrument.Instrumentation;
@@ -20,7 +21,12 @@ public class Javaagent {
             return;
         }
 
-        LogTransformerByInsertCode transformer = new LogTransformerByInsertCode(packages.split(","),timeout);
+        ClassPool classPool = ClassPool.getDefault();
+
+        ClassLoader classLoader = new javassist.MyProxyClassLoader("1".split(","),timeout,classPool);
+        Thread.currentThread().setContextClassLoader(classLoader);
+
+        LogTransformerByInsertCode transformer = new LogTransformerByInsertCode(packages.split(","),timeout,classPool);
         instrumentation.addTransformer(transformer);
     }
 

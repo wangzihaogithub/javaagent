@@ -19,10 +19,12 @@ public class LogTransformerByNewMethod implements ClassFileTransformer {
     private final List<String> packagePaths;
     private String proxyEndsWith = "$raw";
     private long timeout;
+    private ClassPool classPool;
 
-    public LogTransformerByNewMethod(String[] packagePaths,long timeout) {
+    public LogTransformerByNewMethod(String[] packagePaths,long timeout,ClassPool classPool) {
         this.packagePaths = new LinkedList<>(Arrays.asList(packagePaths));
         this.timeout = timeout;
+        this.classPool = classPool;
     }
 
     @Override
@@ -34,9 +36,9 @@ public class LogTransformerByNewMethod implements ClassFileTransformer {
 
 //        System.out.println("begin loader="+loader+", className="+fullClassName);
         try {
-            CtClass ctclass = ClassPool.getDefault().getCached(fullClassName);
+            CtClass ctclass = classPool.getCached(fullClassName);
             if(ctclass == null){
-                ctclass = ClassPool.getDefault().makeClass(new ByteArrayInputStream(classfileBuffer),false);// 使用全称,用于取得字节码类<使用javassist>
+                ctclass = classPool.makeClass(new ByteArrayInputStream(classfileBuffer),false);// 使用全称,用于取得字节码类<使用javassist>
             }
 
             for (CtMethod oldMethod : ctclass.getDeclaredMethods()) {
