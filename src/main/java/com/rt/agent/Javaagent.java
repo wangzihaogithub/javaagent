@@ -23,8 +23,8 @@ public class Javaagent {
 
         ClassPool classPool = ClassPool.getDefault();
 
-        ClassLoader classLoader = new javassist.MyProxyClassLoader("1".split(","),timeout,classPool);
-        Thread.currentThread().setContextClassLoader(classLoader);
+//        ClassLoader classLoader = new javassist.MyProxyClassLoader("1".split(","),timeout,classPool);
+//        Thread.currentThread().setContextClassLoader(classLoader);
 
         LogTransformerByInsertCode transformer = new LogTransformerByInsertCode(packages.split(","),timeout,classPool);
         instrumentation.addTransformer(transformer);
